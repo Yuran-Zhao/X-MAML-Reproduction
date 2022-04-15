@@ -29,12 +29,27 @@ python finetune.py \
     --seed 42
 ```
 
-The finetuned model will be saved as `./finetune_saved_model/pytorch_model.bin`. 
+The finetuned model will be saved as `./finetune/finetune_saved_model/pytorch_model.bin`.
 
-It is worth noting that you need to copy the `*.json` and `*.txt` files in the `./cache_dir/bert-base-multilingual-cased/`, if you want to load the finetuned model through `model = BertForSequenceClassification.from_pretrained('./finetuned_saved_model')`.
+If you want to load the finetuned model through `model = BertForSequenceClassification.from_pretrained('./finetune/finetuned_saved_model')`, you probably need to rename the parameters saved in `./finetune/finetune_saved_model/pytorch_model.bin`:
+```python
+from collections import OrderedDict
+
+import torch
+
+state_dict = torch.load('./finetune/finetuned_saved_model/pytorch_model.bin')
+new_state_dict = OrderedDict()
+
+for k, v in state_dict.items():
+    new_state_dict[k.replace('model.', '')] = v
+
+torch.save(new_state_dict, './finetune/finetuned_saved_model/pytorch_model.bin')
+```
+
+It is worth noting that you also need to copy the `*.json` and `*.txt` files in the `./cache_dir/bert-base-multilingual-cased/` to `./finetune/finetune_saved_model/`.
 
 You can evaluate the performance of finetuned model on the MNLI with following scripts:
-```
+```shell
 cd finetune
 
 data_path=path/to/dataset/
@@ -52,11 +67,11 @@ If you wanna test it on the XNLI dataset, you can simply change the `eval_mnli.p
 
 ### 2. Train the X-MAML Model
 You can obtain the results under zero-shot learning with following script:
-```
+```shell
 cd X-MAML
 
-data_path=../../../../../data/XNLI/XNLI-1.0/
-pretrain_model_dir=../finetunefinetune_saved_model/
+data_path=path/to/dataset/
+pretrain_model_dir=../finetune/finetune_saved_model/
 
 python xmaml.py \
     --data_path $data_path \
